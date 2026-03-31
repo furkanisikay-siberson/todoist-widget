@@ -41,27 +41,34 @@ public sealed class TodoistWidgetProvider : IWidgetProvider
         try
         {
             var manager = WidgetManager.GetDefault();
-            foreach (var info in manager.GetWidgetInfos())
+            var infos = manager.GetWidgetInfos();
+            Log($"RecoverWidgets: {infos.Length} widget bulundu");
+            foreach (var info in infos)
             {
                 var widgetId = info.WidgetContext.Id;
+                var customState = info.CustomState;
+                Log($"RecoverWidgets: widgetId={widgetId}, customStateLen={customState?.Length ?? 0}");
                 lock (_lock)
                 {
                     if (!_states.ContainsKey(widgetId))
                     {
-                        _states[widgetId] = WidgetState.Deserialize(info.CustomState);
+                        var state = WidgetState.Deserialize(customState);
+                        Log($"RecoverWidgets: recovered hasToken={state.HasToken}, cachedTasks={state.CachedTasks.Count}");
+                        _states[widgetId] = state;
                     }
                 }
             }
         }
-        catch
+        catch (Exception ex)
         {
-            // Widget Board henuz hazir degilse veya hata olusursa sessizce devam et
+            Log($"RecoverWidgets HATA: {ex.GetType().Name}: {ex.Message}");
         }
     }
 
     public void CreateWidget(WidgetContext widgetContext)
     {
         var widgetId = widgetContext.Id;
+        Log($"CreateWidget: widgetId={widgetId}");
         var state = new WidgetState();
 
         lock (_lock)
@@ -83,6 +90,7 @@ public sealed class TodoistWidgetProvider : IWidgetProvider
     public void Activate(WidgetContext widgetContext)
     {
         var widgetId = widgetContext.Id;
+        Log($"Activate: widgetId={widgetId}");
         WidgetState state;
 
         lock (_lock)
@@ -91,6 +99,11 @@ public sealed class TodoistWidgetProvider : IWidgetProvider
             {
                 state = new WidgetState();
                 _states[widgetId] = state;
+                Log($"Activate: yeni state olusturuldu (token yok)");
+            }
+            else
+            {
+                Log($"Activate: mevcut state bulundu, hasToken={state.HasToken}, cachedTasks={state.CachedTasks.Count}");
             }
         }
 
@@ -414,6 +427,9 @@ public sealed class TodoistWidgetProvider : IWidgetProvider
     {
         try
         {
+            Log($"PushUpdate: widgetId={widgetId}, templateLen={template?.Length}, dataLen={data?.Length}");
+            Log($"PushUpdate DATA: {data?[..Math.Min(500, data?.Length ?? 0)]}");
+
             var updateOptions = new WidgetUpdateRequestOptions(widgetId)
             {
                 Template = template,
@@ -422,10 +438,11 @@ public sealed class TodoistWidgetProvider : IWidgetProvider
             };
 
             WidgetManager.GetDefault().UpdateWidget(updateOptions);
+            Log("PushUpdate: basarili");
         }
-        catch
+        catch (Exception ex)
         {
-            // Widget Board ulasilamazsa sessizce yoksay
+            Log($"PushUpdate HATA: {ex.GetType().Name}: {ex.Message}");
         }
     }
 }

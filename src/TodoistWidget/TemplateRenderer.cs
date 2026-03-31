@@ -33,18 +33,25 @@ internal static class TemplateRenderer
 
     public static string GetTaskListTemplate() => LoadTemplate("TaskListCard.json");
 
+    // Widget Board cok buyuk data render edemiyor, gorev sayisini sinirla
+    private const int MaxTasksMedium = 7;
+    private const int MaxTasksTotal = 15;
+
     public static string GetTaskListData(List<TodoistTask> tasks, string? offlineNotice = null)
     {
         var overdue = new List<object>();
         var todayList = new List<object>();
+        var total = 0;
 
         foreach (var task in tasks)
         {
+            if (total >= MaxTasksTotal) break;
+
             var isOverdue = task.Due?.IsOverdue == true;
             var item = new
             {
                 id = task.Id,
-                content = TruncateContent(task.Content, 40),
+                content = TruncateContent(task.Content, 35),
                 priorityIcon = GetPriorityIcon(task.Priority),
                 projectName = ""
             };
@@ -53,6 +60,8 @@ internal static class TemplateRenderer
                 overdue.Add(item);
             else
                 todayList.Add(item);
+
+            total++;
         }
 
         var data = new
@@ -78,6 +87,15 @@ internal static class TemplateRenderer
     private static string TruncateContent(string content, int maxLength)
     {
         if (content.Length <= maxLength) return content;
-        return content[..(maxLength - 1)] + "\u2026";
+
+        // StringInfo ile kes - emoji/surrogate pair'leri ortadan bolme
+        var info = new System.Globalization.StringInfo(content);
+        var textElements = info.LengthInTextElements;
+
+        if (textElements <= maxLength) return content;
+
+        // Guvenli kesme: text element bazinda kes
+        var result = info.SubstringByTextElements(0, Math.Min(maxLength - 1, textElements));
+        return result + "\u2026";
     }
 }
