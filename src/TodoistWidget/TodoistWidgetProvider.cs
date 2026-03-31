@@ -159,8 +159,11 @@ public sealed class TodoistWidgetProvider : IWidgetProvider
                     return;
                 }
 
-                state.Token = token;
-                state.LastError = null;
+                lock (_lock)
+                {
+                    state.Token = token;
+                    state.LastError = null;
+                }
 
                 _ = ValidateAndFetchAsync(widgetId, state);
             }
@@ -209,9 +212,12 @@ public sealed class TodoistWidgetProvider : IWidgetProvider
 
     private void HandleResetToken(string widgetId, WidgetState state)
     {
-        state.Token = null;
-        state.CachedTasks.Clear();
-        state.LastError = null;
+        lock (_lock)
+        {
+            state.Token = null;
+            state.CachedTasks.Clear();
+            state.LastError = null;
+        }
         ShowSetup(widgetId, state);
     }
 
@@ -221,12 +227,15 @@ public sealed class TodoistWidgetProvider : IWidgetProvider
     {
         try
         {
-            using var client = new TodoistApiClient(state.Token!);
+            var client = new TodoistApiClient(state.Token!);
             var isValid = await client.ValidateTokenAsync();
 
             if (!isValid)
             {
-                state.Token = null;
+                lock (_lock)
+                {
+                    state.Token = null;
+                }
                 ShowError(widgetId, state, "Token gecersiz. Todoist ayarlarindan kontrol edin.");
                 return;
             }
@@ -245,12 +254,15 @@ public sealed class TodoistWidgetProvider : IWidgetProvider
 
         try
         {
-            using var client = new TodoistApiClient(state.Token!);
+            var client = new TodoistApiClient(state.Token!);
             var (error, tasks) = await client.GetTodayTasksAsync();
 
             if (error != null)
             {
-                state.LastError = error;
+                lock (_lock)
+                {
+                    state.LastError = error;
+                }
 
                 if (state.CachedTasks.Count > 0)
                 {
@@ -263,9 +275,12 @@ public sealed class TodoistWidgetProvider : IWidgetProvider
                 return;
             }
 
-            state.CachedTasks = tasks;
-            state.LastFetchUtc = DateTime.UtcNow.ToString("o");
-            state.LastError = null;
+            lock (_lock)
+            {
+                state.CachedTasks = tasks;
+                state.LastFetchUtc = DateTime.UtcNow.ToString("o");
+                state.LastError = null;
+            }
 
             if (tasks.Count == 0)
             {
@@ -296,19 +311,26 @@ public sealed class TodoistWidgetProvider : IWidgetProvider
         try
         {
             // Optimistic UI: once gorev listeden kaldir
-            state.CachedTasks.RemoveAll(t => t.Id == taskId);
+            lock (_lock)
+            {
+                state.CachedTasks.RemoveAll(t => t.Id == taskId);
+            }
+
             if (state.CachedTasks.Count == 0)
                 ShowEmpty(widgetId, state);
             else
                 UpdateWidgetWithTasks(widgetId, state, state.CachedTasks);
 
             // Sonra API'ye gonder
-            using var client = new TodoistApiClient(state.Token!);
+            var client = new TodoistApiClient(state.Token!);
             var error = await client.CompleteTaskAsync(taskId);
 
             if (error != null)
             {
-                state.LastError = error;
+                lock (_lock)
+                {
+                    state.LastError = error;
+                }
             }
 
             // Tam listeyi yenile (tekrarlayan gorevler icin)
@@ -349,7 +371,10 @@ public sealed class TodoistWidgetProvider : IWidgetProvider
 
     private void ShowError(string widgetId, WidgetState state, string message)
     {
-        state.LastError = message;
+        lock (_lock)
+        {
+            state.LastError = message;
+        }
         PushUpdate(widgetId, TemplateRenderer.GetErrorTemplate(), TemplateRenderer.GetErrorData(message), state);
     }
 
