@@ -22,14 +22,14 @@ public sealed class TodoistTask
     [JsonPropertyName("due")]
     public TodoistDue? Due { get; set; }
 
-    [JsonPropertyName("is_completed")]
-    public bool IsCompleted { get; set; }
+    [JsonPropertyName("checked")]
+    public bool Checked { get; set; }
 
     [JsonPropertyName("labels")]
     public string[] Labels { get; set; } = [];
 
-    [JsonPropertyName("order")]
-    public int Order { get; set; }
+    [JsonPropertyName("child_order")]
+    public int ChildOrder { get; set; }
 }
 
 public sealed class TodoistDue
@@ -61,4 +61,11 @@ public sealed class TodoistDue
             return false;
         }
     }
+}
+
+/// <summary>API v1 yanit wrapperi: {"results": [...]}</summary>
+public sealed class TodoistApiResponse
+{
+    [JsonPropertyName("results")]
+    public TodoistTask[] Results { get; set; } = [];
 }

@@ -40,6 +40,7 @@ public sealed class WidgetState
 [JsonSerializable(typeof(TodoistTask))]
 [JsonSerializable(typeof(TodoistDue))]
 [JsonSerializable(typeof(TodoistTask[]))]
+[JsonSerializable(typeof(TodoistApiResponse))]
 internal sealed partial class WidgetStateContext : JsonSerializerContext
 {
 }

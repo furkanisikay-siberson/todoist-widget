@@ -16,6 +16,21 @@ public sealed class TodoistWidgetProvider : IWidgetProvider
     private static readonly Dictionary<string, WidgetState> _states = new();
     private static readonly object _lock = new();
 
+    private static readonly string LogPath = Path.Combine(
+        Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
+        "TodoistWidget", "widget.log");
+
+    private static void Log(string msg)
+    {
+        var line = $"[{DateTime.Now:HH:mm:ss.fff}] {msg}";
+        try
+        {
+            Directory.CreateDirectory(Path.GetDirectoryName(LogPath)!);
+            File.AppendAllText(LogPath, line + Environment.NewLine);
+        }
+        catch { }
+    }
+
     public TodoistWidgetProvider()
     {
         RecoverWidgets();
@@ -100,6 +115,8 @@ public sealed class TodoistWidgetProvider : IWidgetProvider
         var verb = actionInvokedArgs.Verb;
         var data = actionInvokedArgs.Data;
 
+        Log($"OnActionInvoked: verb={verb}, data={data}");
+
         WidgetState state;
         lock (_lock)
         {
@@ -147,9 +164,11 @@ public sealed class TodoistWidgetProvider : IWidgetProvider
 
     private void HandleSaveToken(string widgetId, WidgetState state, string data)
     {
+        Log($"HandleSaveToken: raw data = [{data}]");
         try
         {
             using var doc = JsonDocument.Parse(data);
+            Log($"HandleSaveToken: parsed JSON properties = [{string.Join(", ", doc.RootElement.EnumerateObject().Select(p => $"{p.Name}={p.Value}"))}]");
             if (doc.RootElement.TryGetProperty("apiToken", out var tokenElement))
             {
                 var token = tokenElement.GetString()?.Trim();
@@ -227,8 +246,10 @@ public sealed class TodoistWidgetProvider : IWidgetProvider
     {
         try
         {
+            Log($"ValidateAndFetchAsync: token length={state.Token?.Length}, first3={state.Token?[..Math.Min(3, state.Token?.Length ?? 0)]}...");
             var client = new TodoistApiClient(state.Token!);
             var isValid = await client.ValidateTokenAsync();
+            Log($"ValidateAndFetchAsync: isValid={isValid}");
 
             if (!isValid)
             {
@@ -256,6 +277,7 @@ public sealed class TodoistWidgetProvider : IWidgetProvider
         {
             var client = new TodoistApiClient(state.Token!);
             var (error, tasks) = await client.GetTodayTasksAsync();
+            Log($"RefreshTasksAsync: error={error}, taskCount={tasks.Count}");
 
             if (error != null)
             {

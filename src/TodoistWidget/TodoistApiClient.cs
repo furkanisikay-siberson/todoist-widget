@@ -6,9 +6,8 @@ using TodoistWidget.Models;
 namespace TodoistWidget;
 
 /// <summary>
-/// Todoist REST v2 API istemcisi.
-/// HttpClient singleton olarak paylasiliyor (socket exhaustion onlemi).
-/// Token degistiginde yeni instance olusturulmali.
+/// Todoist API v1 istemcisi.
+/// HttpClient singleton handler paylasiliyor (socket exhaustion onlemi).
 /// </summary>
 public sealed class TodoistApiClient
 {
@@ -17,14 +16,13 @@ public sealed class TodoistApiClient
         PooledConnectionLifetime = TimeSpan.FromMinutes(5)
     };
 
-    private const string BaseUrl = "https://api.todoist.com/rest/v2/";
+    private const string BaseUrl = "https://api.todoist.com/api/v1/";
     private static readonly TimeSpan RequestTimeout = TimeSpan.FromSeconds(10);
 
     private readonly HttpClient _http;
 
     public TodoistApiClient(string token)
     {
-        // HttpClient handler paylasiliyor, dispose etmeye gerek yok
         _http = new HttpClient(SharedHandler, disposeHandler: false)
         {
             BaseAddress = new Uri(BaseUrl),
@@ -52,16 +50,18 @@ public sealed class TodoistApiClient
             if (!response.IsSuccessStatusCode)
                 return ($"API hatasi: {(int)response.StatusCode}", []);
 
-            var tasks = await response.Content.ReadFromJsonAsync(
-                WidgetStateContext.Default.TodoistTaskArray);
+            // API v1: {"results": [...]}
+            var apiResponse = await response.Content.ReadFromJsonAsync(
+                WidgetStateContext.Default.TodoistApiResponse);
 
-            if (tasks == null)
-                return ("API bos yanit dondurdu.", []);
+            if (apiResponse?.Results == null || apiResponse.Results.Length == 0)
+                return (null, []);
 
-            var sorted = tasks
+            var sorted = apiResponse.Results
+                .Where(t => !t.Checked)
                 .OrderByDescending(t => t.Priority)
                 .ThenBy(t => t.Due?.Date ?? "9999-12-31")
-                .ThenBy(t => t.Order)
+                .ThenBy(t => t.ChildOrder)
                 .ToList();
 
             return (null, sorted);
