@@ -1,0 +1,169 @@
+{
+    "type": "AdaptiveCard",
+    "$schema": "http://adaptivecards.io/schemas/adaptive-card.json",
+    "version": "1.6",
+    "body": [
+        {
+            "type": "Container",
+            "$when": "${overdueCount > 0}",
+            "items": [
+                {
+                    "type": "TextBlock",
+                    "text": "Geciken (${overdueCount})",
+                    "weight": "Bolder",
+                    "size": "Small",
+                    "color": "Attention",
+                    "spacing": "None"
+                },
+                {
+                    "type": "ColumnSet",
+                    "$data": "${overdueTasks}",
+                    "columns": [
+                        {
+                            "type": "Column",
+                            "width": "auto",
+                            "verticalContentAlignment": "Center",
+                            "items": [
+                                {
+                                    "type": "TextBlock",
+                                    "text": "${priorityIcon}",
+                                    "size": "Small",
+                                    "spacing": "None"
+                                }
+                            ]
+                        },
+                        {
+                            "type": "Column",
+                            "width": "stretch",
+                            "items": [
+                                {
+                                    "type": "TextBlock",
+                                    "text": "${content}",
+                                    "wrap": false,
+                                    "size": "Small",
+                                    "spacing": "None"
+                                },
+                                {
+                                    "type": "TextBlock",
+                                    "text": "${projectName}",
+                                    "isSubtle": true,
+                                    "size": "Small",
+                                    "spacing": "None",
+                                    "$when": "${$host.widgetSize==\"large\" && projectName != ''}"
+                                }
+                            ]
+                        },
+                        {
+                            "type": "Column",
+                            "width": "auto",
+                            "verticalContentAlignment": "Center",
+                            "items": [
+                                {
+                                    "type": "ActionSet",
+                                    "actions": [
+                                        {
+                                            "type": "Action.Execute",
+                                            "title": "\u2713",
+                                            "verb": "completeTask",
+                                            "data": { "taskId": "${id}" }
+                                        }
+                                    ]
+                                }
+                            ]
+                        }
+                    ],
+                    "spacing": "Small"
+                }
+            ]
+        },
+        {
+            "type": "Container",
+            "$when": "${todayCount > 0}",
+            "items": [
+                {
+                    "type": "TextBlock",
+                    "text": "Bugun (${todayCount})",
+                    "weight": "Bolder",
+                    "size": "Small",
+                    "spacing": "Small"
+                },
+                {
+                    "type": "ColumnSet",
+                    "$data": "${todayTasks}",
+                    "columns": [
+                        {
+                            "type": "Column",
+                            "width": "auto",
+                            "verticalContentAlignment": "Center",
+                            "items": [
+                                {
+                                    "type": "TextBlock",
+                                    "text": "${priorityIcon}",
+                                    "size": "Small",
+                                    "spacing": "None"
+                                }
+                            ]
+                        },
+                        {
+                            "type": "Column",
+                            "width": "stretch",
+                            "items": [
+                                {
+                                    "type": "TextBlock",
+                                    "text": "${content}",
+                                    "wrap": false,
+                                    "size": "Small",
+                                    "spacing": "None"
+                                },
+                                {
+                                    "type": "TextBlock",
+                                    "text": "${projectName}",
+                                    "isSubtle": true,
+                                    "size": "Small",
+                                    "spacing": "None",
+                                    "$when": "${$host.widgetSize==\"large\" && projectName != ''}"
+                                }
+                            ]
+                        },
+                        {
+                            "type": "Column",
+                            "width": "auto",
+                            "verticalContentAlignment": "Center",
+                            "items": [
+                                {
+                                    "type": "ActionSet",
+                                    "actions": [
+                                        {
+                                            "type": "Action.Execute",
+                                            "title": "\u2713",
+                                            "verb": "completeTask",
+                                            "data": { "taskId": "${id}" }
+                                        }
+                                    ]
+                                }
+                            ]
+                        }
+                    ],
+                    "spacing": "Small"
+                }
+            ]
+        },
+        {
+            "type": "TextBlock",
+            "$when": "${offlineNotice != ''}",
+            "text": "${offlineNotice}",
+            "size": "Small",
+            "isSubtle": true,
+            "color": "Warning",
+            "spacing": "Small"
+        }
+    ],
+    "actions": [
+        {
+            "type": "Action.Execute",
+            "title": "Yenile",
+            "verb": "refresh",
+            "$when": "${$host.widgetSize!=\"small\"}"
+        }
+    ]
+}

@@ -1,0 +1,23 @@
+## .NET
+bin/
+obj/
+*.user
+*.suo
+*.cache
+*.vs/
+.vs/
+
+## NuGet
+*.nupkg
+packages/
+
+## MSIX
+AppPackages/
+BundleArtifacts/
+*.appx
+*.msix
+*.appxbundle
+
+## IDE
+.idea/
+*.sln.DotSettings.user

@@ -1,0 +1,8 @@
+{
+  "profiles": {
+    "TodoistWidget": {
+      "commandName": "Project",
+      "commandLineArgs": "-RegisterProcessAsComServer"
+    }
+  }
+}

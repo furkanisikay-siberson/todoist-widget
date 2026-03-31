@@ -1,0 +1,27 @@
+{
+    "type": "AdaptiveCard",
+    "$schema": "http://adaptivecards.io/schemas/adaptive-card.json",
+    "version": "1.6",
+    "body": [
+        {
+            "type": "TextBlock",
+            "text": "Todoist",
+            "weight": "Bolder",
+            "size": "Medium"
+        },
+        {
+            "type": "TextBlock",
+            "text": "Bugun gorev yok! \ud83c\udf89",
+            "wrap": true,
+            "horizontalAlignment": "Center",
+            "size": "Medium"
+        }
+    ],
+    "actions": [
+        {
+            "type": "Action.Execute",
+            "title": "Yenile",
+            "verb": "refresh"
+        }
+    ]
+}
