@@ -2,149 +2,156 @@
     "type": "AdaptiveCard",
     "$schema": "http://adaptivecards.io/schemas/adaptive-card.json",
     "version": "1.6",
+    "verticalContentAlignment": "Top",
     "body": [
         {
             "type": "Container",
             "$when": "${overdueCount > 0}",
+            "spacing": "None",
             "items": [
                 {
                     "type": "TextBlock",
-                    "text": "Geciken (${overdueCount})",
+                    "text": "Geciken  ${overdueCount}",
                     "weight": "Bolder",
                     "size": "Small",
                     "color": "Attention",
-                    "spacing": "None"
+                    "spacing": "Small"
                 },
                 {
-                    "type": "ColumnSet",
+                    "type": "Container",
                     "$data": "${overdueTasks}",
-                    "columns": [
+                    "spacing": "Small",
+                    "items": [
                         {
-                            "type": "Column",
-                            "width": "auto",
-                            "verticalContentAlignment": "Center",
-                            "items": [
+                            "type": "ColumnSet",
+                            "spacing": "None",
+                            "columns": [
                                 {
-                                    "type": "TextBlock",
-                                    "text": "${priorityIcon}",
-                                    "size": "Small",
-                                    "spacing": "None"
-                                }
-                            ]
-                        },
-                        {
-                            "type": "Column",
-                            "width": "stretch",
-                            "items": [
-                                {
-                                    "type": "TextBlock",
-                                    "text": "${content}",
-                                    "wrap": false,
-                                    "size": "Small",
-                                    "spacing": "None"
+                                    "type": "Column",
+                                    "width": "24px",
+                                    "verticalContentAlignment": "Center",
+                                    "items": [
+                                        {
+                                            "type": "ActionSet",
+                                            "actions": [
+                                                {
+                                                    "type": "Action.Execute",
+                                                    "title": "○",
+                                                    "verb": "completeTask",
+                                                    "data": { "taskId": "${id}" },
+                                                    "style": "default"
+                                                }
+                                            ]
+                                        }
+                                    ]
                                 },
                                 {
-                                    "type": "TextBlock",
-                                    "text": "${projectName}",
-                                    "isSubtle": true,
-                                    "size": "Small",
-                                    "spacing": "None",
-                                    "$when": "${$host.widgetSize==\"large\" && projectName != ''}"
-                                }
-                            ]
-                        },
-                        {
-                            "type": "Column",
-                            "width": "auto",
-                            "verticalContentAlignment": "Center",
-                            "items": [
-                                {
-                                    "type": "ActionSet",
-                                    "actions": [
+                                    "type": "Column",
+                                    "width": "auto",
+                                    "verticalContentAlignment": "Center",
+                                    "spacing": "Small",
+                                    "items": [
                                         {
-                                            "type": "Action.Execute",
-                                            "title": "\u2713",
-                                            "verb": "completeTask",
-                                            "data": { "taskId": "${id}" }
+                                            "type": "TextBlock",
+                                            "text": "${priorityIcon}",
+                                            "spacing": "None",
+                                            "size": "Small"
+                                        }
+                                    ]
+                                },
+                                {
+                                    "type": "Column",
+                                    "width": "stretch",
+                                    "verticalContentAlignment": "Center",
+                                    "spacing": "Small",
+                                    "items": [
+                                        {
+                                            "type": "TextBlock",
+                                            "text": "${content}",
+                                            "wrap": false,
+                                            "size": "Small",
+                                            "spacing": "None"
                                         }
                                     ]
                                 }
                             ]
                         }
-                    ],
-                    "spacing": "Small"
+                    ]
                 }
             ]
         },
         {
             "type": "Container",
             "$when": "${todayCount > 0}",
+            "spacing": "Small",
             "items": [
                 {
                     "type": "TextBlock",
-                    "text": "Bugun (${todayCount})",
+                    "text": "Bugun  ${todayCount}",
                     "weight": "Bolder",
                     "size": "Small",
                     "spacing": "Small"
                 },
                 {
-                    "type": "ColumnSet",
+                    "type": "Container",
                     "$data": "${todayTasks}",
-                    "columns": [
+                    "spacing": "Small",
+                    "items": [
                         {
-                            "type": "Column",
-                            "width": "auto",
-                            "verticalContentAlignment": "Center",
-                            "items": [
+                            "type": "ColumnSet",
+                            "spacing": "None",
+                            "columns": [
                                 {
-                                    "type": "TextBlock",
-                                    "text": "${priorityIcon}",
-                                    "size": "Small",
-                                    "spacing": "None"
-                                }
-                            ]
-                        },
-                        {
-                            "type": "Column",
-                            "width": "stretch",
-                            "items": [
-                                {
-                                    "type": "TextBlock",
-                                    "text": "${content}",
-                                    "wrap": false,
-                                    "size": "Small",
-                                    "spacing": "None"
+                                    "type": "Column",
+                                    "width": "24px",
+                                    "verticalContentAlignment": "Center",
+                                    "items": [
+                                        {
+                                            "type": "ActionSet",
+                                            "actions": [
+                                                {
+                                                    "type": "Action.Execute",
+                                                    "title": "○",
+                                                    "verb": "completeTask",
+                                                    "data": { "taskId": "${id}" },
+                                                    "style": "default"
+                                                }
+                                            ]
+                                        }
+                                    ]
                                 },
                                 {
-                                    "type": "TextBlock",
-                                    "text": "${projectName}",
-                                    "isSubtle": true,
-                                    "size": "Small",
-                                    "spacing": "None",
-                                    "$when": "${$host.widgetSize==\"large\" && projectName != ''}"
-                                }
-                            ]
-                        },
-                        {
-                            "type": "Column",
-                            "width": "auto",
-                            "verticalContentAlignment": "Center",
-                            "items": [
-                                {
-                                    "type": "ActionSet",
-                                    "actions": [
+                                    "type": "Column",
+                                    "width": "auto",
+                                    "verticalContentAlignment": "Center",
+                                    "spacing": "Small",
+                                    "items": [
                                         {
-                                            "type": "Action.Execute",
-                                            "title": "\u2713",
-                                            "verb": "completeTask",
-                                            "data": { "taskId": "${id}" }
+                                            "type": "TextBlock",
+                                            "text": "${priorityIcon}",
+                                            "spacing": "None",
+                                            "size": "Small"
+                                        }
+                                    ]
+                                },
+                                {
+                                    "type": "Column",
+                                    "width": "stretch",
+                                    "verticalContentAlignment": "Center",
+                                    "spacing": "Small",
+                                    "items": [
+                                        {
+                                            "type": "TextBlock",
+                                            "text": "${content}",
+                                            "wrap": false,
+                                            "size": "Small",
+                                            "spacing": "None"
                                         }
                                     ]
                                 }
                             ]
                         }
-                    ],
-                    "spacing": "Small"
+                    ]
                 }
             ]
         },
@@ -162,8 +169,7 @@
         {
             "type": "Action.Execute",
             "title": "Yenile",
-            "verb": "refresh",
-            "$when": "${$host.widgetSize!=\"small\"}"
+            "verb": "refresh"
         }
     ]
 }
