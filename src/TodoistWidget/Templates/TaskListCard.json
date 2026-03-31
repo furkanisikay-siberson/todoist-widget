@@ -2,25 +2,24 @@
     "type": "AdaptiveCard",
     "$schema": "http://adaptivecards.io/schemas/adaptive-card.json",
     "version": "1.6",
-    "verticalContentAlignment": "Top",
     "body": [
         {
             "type": "Container",
             "$when": "${overdueCount > 0}",
-            "spacing": "None",
+            "spacing": "Small",
             "items": [
                 {
                     "type": "TextBlock",
-                    "text": "Geciken  ${overdueCount}",
+                    "text": "Geciken",
                     "weight": "Bolder",
                     "size": "Small",
                     "color": "Attention",
-                    "spacing": "Small"
+                    "spacing": "None"
                 },
                 {
                     "type": "Container",
                     "$data": "${overdueTasks}",
-                    "spacing": "Small",
+                    "spacing": "ExtraSmall",
                     "items": [
                         {
                             "type": "ColumnSet",
@@ -28,49 +27,67 @@
                             "columns": [
                                 {
                                     "type": "Column",
-                                    "width": "24px",
-                                    "verticalContentAlignment": "Center",
-                                    "items": [
-                                        {
-                                            "type": "ActionSet",
-                                            "actions": [
-                                                {
-                                                    "type": "Action.Execute",
-                                                    "title": "○",
-                                                    "verb": "completeTask",
-                                                    "data": { "taskId": "${id}" },
-                                                    "style": "default"
-                                                }
-                                            ]
-                                        }
-                                    ]
-                                },
-                                {
-                                    "type": "Column",
                                     "width": "auto",
+                                    "spacing": "None",
                                     "verticalContentAlignment": "Center",
-                                    "spacing": "Small",
                                     "items": [
                                         {
                                             "type": "TextBlock",
                                             "text": "${priorityIcon}",
-                                            "spacing": "None",
-                                            "size": "Small"
+                                            "size": "Small",
+                                            "spacing": "None"
                                         }
                                     ]
                                 },
                                 {
                                     "type": "Column",
                                     "width": "stretch",
-                                    "verticalContentAlignment": "Center",
                                     "spacing": "Small",
+                                    "verticalContentAlignment": "Center",
                                     "items": [
                                         {
                                             "type": "TextBlock",
                                             "text": "${content}",
-                                            "wrap": false,
                                             "size": "Small",
+                                            "wrap": false,
                                             "spacing": "None"
+                                        }
+                                    ]
+                                },
+                                {
+                                    "type": "Column",
+                                    "width": "auto",
+                                    "spacing": "Small",
+                                    "verticalContentAlignment": "Center",
+                                    "items": [
+                                        {
+                                            "type": "TextBlock",
+                                            "text": "${dueDisplay}",
+                                            "size": "Small",
+                                            "color": "Attention",
+                                            "spacing": "None",
+                                            "isSubtle": true
+                                        }
+                                    ]
+                                },
+                                {
+                                    "type": "Column",
+                                    "width": "auto",
+                                    "spacing": "Small",
+                                    "verticalContentAlignment": "Center",
+                                    "items": [
+                                        {
+                                            "type": "ActionSet",
+                                            "spacing": "None",
+                                            "actions": [
+                                                {
+                                                    "type": "Action.Execute",
+                                                    "title": "Done",
+                                                    "verb": "completeTask",
+                                                    "data": { "taskId": "${id}" },
+                                                    "style": "positive"
+                                                }
+                                            ]
                                         }
                                     ]
                                 }
@@ -84,18 +101,19 @@
             "type": "Container",
             "$when": "${todayCount > 0}",
             "spacing": "Small",
+            "separator": true,
             "items": [
                 {
                     "type": "TextBlock",
-                    "text": "Bugun  ${todayCount}",
+                    "text": "Bugun",
                     "weight": "Bolder",
                     "size": "Small",
-                    "spacing": "Small"
+                    "spacing": "None"
                 },
                 {
                     "type": "Container",
                     "$data": "${todayTasks}",
-                    "spacing": "Small",
+                    "spacing": "ExtraSmall",
                     "items": [
                         {
                             "type": "ColumnSet",
@@ -103,49 +121,51 @@
                             "columns": [
                                 {
                                     "type": "Column",
-                                    "width": "24px",
-                                    "verticalContentAlignment": "Center",
-                                    "items": [
-                                        {
-                                            "type": "ActionSet",
-                                            "actions": [
-                                                {
-                                                    "type": "Action.Execute",
-                                                    "title": "○",
-                                                    "verb": "completeTask",
-                                                    "data": { "taskId": "${id}" },
-                                                    "style": "default"
-                                                }
-                                            ]
-                                        }
-                                    ]
-                                },
-                                {
-                                    "type": "Column",
                                     "width": "auto",
+                                    "spacing": "None",
                                     "verticalContentAlignment": "Center",
-                                    "spacing": "Small",
                                     "items": [
                                         {
                                             "type": "TextBlock",
                                             "text": "${priorityIcon}",
-                                            "spacing": "None",
-                                            "size": "Small"
+                                            "size": "Small",
+                                            "spacing": "None"
                                         }
                                     ]
                                 },
                                 {
                                     "type": "Column",
                                     "width": "stretch",
-                                    "verticalContentAlignment": "Center",
                                     "spacing": "Small",
+                                    "verticalContentAlignment": "Center",
                                     "items": [
                                         {
                                             "type": "TextBlock",
                                             "text": "${content}",
-                                            "wrap": false,
                                             "size": "Small",
+                                            "wrap": false,
                                             "spacing": "None"
+                                        }
+                                    ]
+                                },
+                                {
+                                    "type": "Column",
+                                    "width": "auto",
+                                    "spacing": "Small",
+                                    "verticalContentAlignment": "Center",
+                                    "items": [
+                                        {
+                                            "type": "ActionSet",
+                                            "spacing": "None",
+                                            "actions": [
+                                                {
+                                                    "type": "Action.Execute",
+                                                    "title": "Done",
+                                                    "verb": "completeTask",
+                                                    "data": { "taskId": "${id}" },
+                                                    "style": "positive"
+                                                }
+                                            ]
                                         }
                                     ]
                                 }

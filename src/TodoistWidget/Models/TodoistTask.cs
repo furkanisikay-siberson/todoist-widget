@@ -54,11 +54,29 @@ public sealed class TodoistDue
         get
         {
             if (string.IsNullOrEmpty(Date)) return false;
-            if (DateOnly.TryParse(Date, out var dueDate))
+
+            // v1 API: "2026-02-11T07:00:00" veya "2026-02-11" formati
+            if (System.DateTime.TryParse(Date, out var dueDateTime))
             {
-                return dueDate < DateOnly.FromDateTime(System.DateTime.Now);
+                return dueDateTime.Date < System.DateTime.Now.Date;
             }
             return false;
+        }
+    }
+
+    /// <summary>Kisaltilmis tarih gosterimi: "11 Sub" veya "Bugun"</summary>
+    public string ShortDateDisplay
+    {
+        get
+        {
+            if (string.IsNullOrEmpty(Date)) return "";
+            if (System.DateTime.TryParse(Date, out var dt))
+            {
+                if (dt.Date == System.DateTime.Today) return "Bugun";
+                if (dt.Date == System.DateTime.Today.AddDays(-1)) return "Dun";
+                return dt.ToString("d MMM", new System.Globalization.CultureInfo("tr-TR"));
+            }
+            return "";
         }
     }
 }

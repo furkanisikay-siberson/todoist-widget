@@ -36,7 +36,8 @@ public sealed class TodoistApiClient
     {
         try
         {
-            var response = await _http.GetAsync("tasks?filter=today%20%7C%20overdue");
+            // v1 API: /tasks degil, /tasks/filter?query= kullanilmali
+            var response = await _http.GetAsync("tasks/filter?query=today%20%7C%20overdue");
 
             if (response.StatusCode == HttpStatusCode.Unauthorized)
                 return ("Token gecersiz. Todoist ayarlarindan kontrol edin.", []);

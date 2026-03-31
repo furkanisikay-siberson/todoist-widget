@@ -51,9 +51,9 @@ internal static class TemplateRenderer
             var item = new
             {
                 id = task.Id,
-                content = TruncateContent(task.Content, 35),
+                content = TruncateContent(task.Content, 30),
                 priorityIcon = GetPriorityIcon(task.Priority),
-                projectName = ""
+                dueDisplay = task.Due?.ShortDateDisplay ?? ""
             };
 
             if (isOverdue)
