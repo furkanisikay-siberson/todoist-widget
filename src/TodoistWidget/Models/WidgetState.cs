@@ -17,6 +17,15 @@ public sealed class WidgetState
     [JsonPropertyName("lastError")]
     public string? LastError { get; set; }
 
+    [JsonPropertyName("userName")]
+    public string? UserName { get; set; }
+
+    [JsonPropertyName("avatarUrl")]
+    public string? AvatarUrl { get; set; }
+
+    [JsonPropertyName("email")]
+    public string? Email { get; set; }
+
     public bool HasToken => !string.IsNullOrWhiteSpace(Token);
 
     public string Serialize() => JsonSerializer.Serialize(this, WidgetStateContext.Default.WidgetState);
@@ -41,6 +50,8 @@ public sealed class WidgetState
 [JsonSerializable(typeof(TodoistDue))]
 [JsonSerializable(typeof(TodoistTask[]))]
 [JsonSerializable(typeof(TodoistApiResponse))]
+[JsonSerializable(typeof(TodoistUser))]
+[JsonSerializable(typeof(TodoistSyncResponse))]
 internal sealed partial class WidgetStateContext : JsonSerializerContext
 {
 }

@@ -1,6 +1,7 @@
 using System.Collections.Concurrent;
 using System.Reflection;
 using System.Text.Json;
+using System.Text.RegularExpressions;
 using TodoistWidget.Models;
 
 namespace TodoistWidget;
@@ -33,11 +34,29 @@ internal static class TemplateRenderer
 
     public static string GetTaskListTemplate() => LoadTemplate("TaskListCard.json");
 
+    public static string GetSettingsTemplate() => LoadTemplate("SettingsCard.json");
+
+    public static string GetAddTaskTemplate() => LoadTemplate("AddTaskCard.json");
+    public static string GetAddTaskData() => "{}";
+    public static string GetSettingsData(WidgetState state)
+    {
+        return JsonSerializer.Serialize(new
+        {
+            userName = state.UserName ?? "",
+            email = state.Email ?? ""
+        });
+    }
+
     // Widget Board cok buyuk data render edemiyor, gorev sayisini sinirla
     private const int MaxTasksMedium = 7;
     private const int MaxTasksTotal = 15;
 
-    public static string GetTaskListData(List<TodoistTask> tasks, string? offlineNotice = null)
+    private static readonly System.Globalization.CultureInfo TrCulture = new("tr-TR");
+
+    // Markdown link pattern: [text](url)
+    private static readonly Regex MarkdownLinkRegex = new(@"\[([^\]]+)\]\([^\)]+\)", RegexOptions.Compiled);
+
+    public static string GetTaskListData(List<TodoistTask> tasks, string? userName = null, string? avatarUrl = null, string? offlineNotice = null)
     {
         var overdue = new List<object>();
         var todayList = new List<object>();
@@ -51,9 +70,8 @@ internal static class TemplateRenderer
             var item = new
             {
                 id = task.Id,
-                content = TruncateContent(task.Content, 30),
-                priorityIcon = GetPriorityIcon(task.Priority),
-                dueDisplay = task.Due?.ShortDateDisplay ?? ""
+                content = TruncateContent(CleanContent(task.Content), 40),
+                subtitle = BuildSubtitle(task, isOverdue)
             };
 
             if (isOverdue)
@@ -66,6 +84,9 @@ internal static class TemplateRenderer
 
         var data = new
         {
+            userName = userName ?? "",
+            avatarUrl = avatarUrl ?? "",
+            todayDateHeader = DateTime.Now.ToString("dddd, d MMM", TrCulture),
             overdueTasks = overdue,
             overdueCount = overdue.Count,
             todayTasks = todayList,
@@ -76,13 +97,54 @@ internal static class TemplateRenderer
         return JsonSerializer.Serialize(data);
     }
 
-    private static string GetPriorityIcon(int priority) => priority switch
+    /// <summary>Markdown linklerini temizler: [text](url) -> text</summary>
+    private static string CleanContent(string content)
     {
-        4 => "\ud83d\udd34",  // P1 - Urgent (red circle)
-        3 => "\ud83d\udfe0",  // P2 - High (orange circle)
-        2 => "\ud83d\udd35",  // P3 - Medium (blue circle)
-        _ => "\u26aa"          // P4 - Normal (white circle)
-    };
+        return MarkdownLinkRegex.Replace(content, "$1");
+    }
+
+    /// <summary>Gorev alt satirini olusturur: tarih + tekrar + etiketler</summary>
+    private static string BuildSubtitle(TodoistTask task, bool isOverdue)
+    {
+        var parts = new List<string>();
+
+        // Tarih bilgisi
+        if (task.Due != null)
+        {
+            var dateStr = isOverdue
+                ? task.Due.ShortDateDisplay
+                : "";
+
+            // Saat bilgisi
+            if (!string.IsNullOrEmpty(task.Due.DateTime) &&
+                System.DateTime.TryParse(task.Due.DateTime, out var dt))
+            {
+                var timeStr = dt.ToString("H:mm", TrCulture);
+                dateStr = string.IsNullOrEmpty(dateStr) ? timeStr : $"{dateStr} {timeStr}";
+            }
+
+            if (task.Due.IsRecurring)
+            {
+                dateStr = string.IsNullOrEmpty(dateStr)
+                    ? "\u21bb tekrar"
+                    : $"{dateStr} \u21bb";
+            }
+
+            if (!string.IsNullOrEmpty(dateStr))
+                parts.Add(dateStr);
+        }
+
+        // Etiketler
+        if (task.Labels.Length > 0)
+        {
+            foreach (var label in task.Labels)
+            {
+                parts.Add($"# {label}");
+            }
+        }
+
+        return string.Join("  \u00b7  ", parts);
+    }
 
     private static string TruncateContent(string content, int maxLength)
     {

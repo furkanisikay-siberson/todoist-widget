@@ -1,5 +1,6 @@
 using System.Runtime.InteropServices;
 using System.Text.Json;
+using Windows.Security.Credentials;
 using Microsoft.Windows.Widgets.Providers;
 using TodoistWidget.Models;
 
@@ -16,17 +17,64 @@ public sealed class TodoistWidgetProvider : IWidgetProvider
     private static readonly Dictionary<string, WidgetState> _states = new();
     private static readonly object _lock = new();
 
-    private static readonly string LogPath = Path.Combine(
+    private static readonly string AppDataDir = Path.Combine(
         Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
-        "TodoistWidget", "widget.log");
+        "TodoistWidget");
+
+    private static readonly string LogPath = Path.Combine(AppDataDir, "widget.log");
+    private const string VaultResource = "TodoistWidget";
+    private const string VaultUser = "api_token";
 
     private static void Log(string msg)
     {
         var line = $"[{DateTime.Now:HH:mm:ss.fff}] {msg}";
         try
         {
-            Directory.CreateDirectory(Path.GetDirectoryName(LogPath)!);
+            Directory.CreateDirectory(AppDataDir);
             File.AppendAllText(LogPath, line + Environment.NewLine);
+        }
+        catch { }
+    }
+
+    /// <summary>Token'i Windows Credential Manager'a kaydeder (sifrelenmis).</summary>
+    private static void SaveTokenToVault(string token)
+    {
+        try
+        {
+            var vault = new PasswordVault();
+            // Onceki kaydi sil (varsa)
+            try { vault.Remove(vault.Retrieve(VaultResource, VaultUser)); } catch { }
+            vault.Add(new PasswordCredential(VaultResource, VaultUser, token));
+        }
+        catch (Exception ex)
+        {
+            Log($"SaveTokenToVault HATA: {ex.Message}");
+        }
+    }
+
+    /// <summary>Token'i Windows Credential Manager'dan okur.</summary>
+    private static string? LoadTokenFromVault()
+    {
+        try
+        {
+            var vault = new PasswordVault();
+            var cred = vault.Retrieve(VaultResource, VaultUser);
+            cred.RetrievePassword();
+            return string.IsNullOrWhiteSpace(cred.Password) ? null : cred.Password;
+        }
+        catch
+        {
+            return null;
+        }
+    }
+
+    /// <summary>Token'i Windows Credential Manager'dan siler.</summary>
+    private static void DeleteTokenFromVault()
+    {
+        try
+        {
+            var vault = new PasswordVault();
+            vault.Remove(vault.Retrieve(VaultResource, VaultUser));
         }
         catch { }
     }
@@ -69,14 +117,45 @@ public sealed class TodoistWidgetProvider : IWidgetProvider
     {
         var widgetId = widgetContext.Id;
         Log($"CreateWidget: widgetId={widgetId}");
-        var state = new WidgetState();
 
+        WidgetState state;
         lock (_lock)
         {
+            // 1) Mevcut bir widget'tan token kopyala
+            var existing = _states.Values.FirstOrDefault(s => s.HasToken);
+            if (existing != null)
+            {
+                state = new WidgetState
+                {
+                    Token = existing.Token,
+                    CachedTasks = new List<TodoistTask>(existing.CachedTasks),
+                    LastFetchUtc = existing.LastFetchUtc
+                };
+                Log($"CreateWidget: token mevcut widget'tan kopyalandi");
+            }
+            else
+            {
+                // 2) Yerel dosyadan token oku
+                state = new WidgetState();
+                var fileToken = LoadTokenFromVault();
+                if (fileToken != null)
+                {
+                    state.Token = fileToken;
+                    Log($"CreateWidget: token dosyadan yuklendi");
+                }
+            }
+
             _states[widgetId] = state;
         }
 
-        UpdateWidgetUI(widgetId, state);
+        if (state.HasToken)
+        {
+            _ = RefreshTasksAsync(widgetId, state);
+        }
+        else
+        {
+            UpdateWidgetUI(widgetId, state);
+        }
     }
 
     public void DeleteWidget(string widgetId, string customState)
@@ -104,6 +183,17 @@ public sealed class TodoistWidgetProvider : IWidgetProvider
             else
             {
                 Log($"Activate: mevcut state bulundu, hasToken={state.HasToken}, cachedTasks={state.CachedTasks.Count}");
+            }
+
+            // Token yoksa dosyadan yukle
+            if (!state.HasToken)
+            {
+                var fileToken = LoadTokenFromVault();
+                if (fileToken != null)
+                {
+                    state.Token = fileToken;
+                    Log($"Activate: token dosyadan yuklendi");
+                }
             }
         }
 
@@ -157,6 +247,18 @@ public sealed class TodoistWidgetProvider : IWidgetProvider
             case "resetToken":
                 HandleResetToken(widgetId, state);
                 break;
+
+            case "showSettings":
+                ShowSettings(widgetId, state);
+                break;
+
+            case "showAddTask":
+                ShowAddTask(widgetId, state);
+                break;
+
+            case "addTask":
+                HandleAddTask(widgetId, state, data);
+                break;
         }
     }
 
@@ -197,6 +299,7 @@ public sealed class TodoistWidgetProvider : IWidgetProvider
                     state.LastError = null;
                 }
 
+                SaveTokenToVault(token);
                 _ = ValidateAndFetchAsync(widgetId, state);
             }
             else
@@ -247,9 +350,13 @@ public sealed class TodoistWidgetProvider : IWidgetProvider
         lock (_lock)
         {
             state.Token = null;
+            state.UserName = null;
+            state.AvatarUrl = null;
+            state.Email = null;
             state.CachedTasks.Clear();
             state.LastError = null;
         }
+        DeleteTokenFromVault();
         ShowSetup(widgetId, state);
     }
 
@@ -270,8 +377,24 @@ public sealed class TodoistWidgetProvider : IWidgetProvider
                 {
                     state.Token = null;
                 }
+                DeleteTokenFromVault();
                 ShowError(widgetId, state, "Token gecersiz. Todoist ayarlarindan kontrol edin.");
                 return;
+            }
+
+            // Kullanici bilgisini cek
+            if (string.IsNullOrEmpty(state.UserName))
+            {
+                var (user, userError) = await client.GetUserAsync();
+                if (user != null)
+                {
+                    lock (_lock) { state.UserName = user.FullName; state.AvatarUrl = user.AvatarSmall; state.Email = user.Email; }
+                    Log($"ValidateAndFetchAsync: userName={user.FullName}");
+                }
+                else
+                {
+                    Log($"ValidateAndFetchAsync: user alinamadi: {userError}");
+                }
             }
 
             await RefreshTasksAsync(widgetId, state);
@@ -289,6 +412,22 @@ public sealed class TodoistWidgetProvider : IWidgetProvider
         try
         {
             var client = new TodoistApiClient(state.Token!);
+
+            // Kullanici adi yoksa cek (recover sonrasi)
+            if (string.IsNullOrEmpty(state.UserName))
+            {
+                var (user, userError) = await client.GetUserAsync();
+                if (user != null)
+                {
+                    lock (_lock) { state.UserName = user.FullName; state.AvatarUrl = user.AvatarSmall; state.Email = user.Email; }
+                    Log($"RefreshTasksAsync: userName={user.FullName}");
+                }
+                else
+                {
+                    Log($"RefreshTasksAsync: user alinamadi: {userError}");
+                }
+            }
+
             var (error, tasks) = await client.GetTodayTasksAsync();
             Log($"RefreshTasksAsync: error={error}, taskCount={tasks.Count}");
 
@@ -418,9 +557,54 @@ public sealed class TodoistWidgetProvider : IWidgetProvider
         PushUpdate(widgetId, TemplateRenderer.GetEmptyTemplate(), TemplateRenderer.GetEmptyData(), state);
     }
 
+    private void ShowAddTask(string widgetId, WidgetState state)
+    {
+        PushUpdate(widgetId, TemplateRenderer.GetAddTaskTemplate(), TemplateRenderer.GetAddTaskData(), state);
+    }
+
+    private void HandleAddTask(string widgetId, WidgetState state, string data)
+    {
+        try
+        {
+            using var doc = JsonDocument.Parse(data);
+            if (doc.RootElement.TryGetProperty("taskContent", out var contentEl))
+            {
+                var content = contentEl.GetString()?.Trim();
+                if (!string.IsNullOrEmpty(content) && state.HasToken)
+                {
+                    _ = AddTaskAndRefreshAsync(widgetId, state, content);
+                    return;
+                }
+            }
+        }
+        catch { }
+        // Bos veya hata - gorev listesine don
+        HandleRefresh(widgetId, state);
+    }
+
+    private async Task AddTaskAndRefreshAsync(string widgetId, WidgetState state, string content)
+    {
+        try
+        {
+            var client = new TodoistApiClient(state.Token!);
+            var error = await client.AddTaskAsync(content);
+            Log($"AddTaskAndRefreshAsync: error={error}");
+            await RefreshTasksAsync(widgetId, state);
+        }
+        catch
+        {
+            await RefreshTasksAsync(widgetId, state);
+        }
+    }
+
+    private void ShowSettings(string widgetId, WidgetState state)
+    {
+        PushUpdate(widgetId, TemplateRenderer.GetSettingsTemplate(), TemplateRenderer.GetSettingsData(state), state);
+    }
+
     private void UpdateWidgetWithTasks(string widgetId, WidgetState state, List<TodoistTask> tasks, string? offlineNotice = null)
     {
-        PushUpdate(widgetId, TemplateRenderer.GetTaskListTemplate(), TemplateRenderer.GetTaskListData(tasks, offlineNotice), state);
+        PushUpdate(widgetId, TemplateRenderer.GetTaskListTemplate(), TemplateRenderer.GetTaskListData(tasks, state.UserName, state.AvatarUrl, offlineNotice), state);
     }
 
     private static void PushUpdate(string widgetId, string template, string data, WidgetState state)
