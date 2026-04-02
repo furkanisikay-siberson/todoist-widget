@@ -110,6 +110,36 @@ public sealed class TodoistApiClient
         }
     }
 
+    /// <summary>Yeni gorev olusturur.</summary>
+    public async Task<string?> AddTaskAsync(string content)
+    {
+        try
+        {
+            var requestId = Guid.NewGuid().ToString();
+            var request = new HttpRequestMessage(HttpMethod.Post, "tasks");
+            request.Headers.Add("X-Request-Id", requestId);
+            request.Content = new StringContent(
+                JsonSerializer.Serialize(new { content }),
+                System.Text.Encoding.UTF8,
+                "application/json");
+
+            var response = await _http.SendAsync(request);
+
+            if (!response.IsSuccessStatusCode)
+                return $"Gorev eklenemedi: {(int)response.StatusCode}";
+
+            return null;
+        }
+        catch (TaskCanceledException)
+        {
+            return "Baglanti zaman asimina ugradi.";
+        }
+        catch (HttpRequestException ex)
+        {
+            return $"Baglanti hatasi: {ex.Message}";
+        }
+    }
+
     public async Task<bool> ValidateTokenAsync()
     {
         try
@@ -120,6 +150,27 @@ public sealed class TodoistApiClient
         catch
         {
             return false;
+        }
+    }
+
+    /// <summary>Todoist REST API v1 ile kullanici bilgisini ceker.</summary>
+    public async Task<(TodoistUser? user, string? error)> GetUserAsync()
+    {
+        try
+        {
+            var response = await _http.GetAsync("user");
+
+            if (!response.IsSuccessStatusCode)
+                return (null, $"User API {(int)response.StatusCode}");
+
+            var user = await response.Content.ReadFromJsonAsync(
+                WidgetStateContext.Default.TodoistUser);
+
+            return (user, null);
+        }
+        catch (Exception ex)
+        {
+            return (null, ex.Message);
         }
     }
 }

@@ -72,7 +72,8 @@
                   <Definition
                     Id="Todoist_Tasks_Widget"
                     DisplayName="Todoist Gorevlerim"
-                    Description="Bugunun gorevleri ve geciken gorevler">
+                    Description="Bugunun gorevleri ve geciken gorevler"
+>
                     <Capabilities>
                       <Capability>
                         <Size Name="medium" />

@@ -87,3 +87,23 @@ public sealed class TodoistApiResponse
     [JsonPropertyName("results")]
     public TodoistTask[] Results { get; set; } = [];
 }
+
+/// <summary>Todoist Sync API user bilgisi.</summary>
+public sealed class TodoistUser
+{
+    [JsonPropertyName("full_name")]
+    public string FullName { get; set; } = "";
+
+    [JsonPropertyName("email")]
+    public string Email { get; set; } = "";
+
+    [JsonPropertyName("avatar_small")]
+    public string? AvatarSmall { get; set; }
+}
+
+/// <summary>Sync API yanit wrapperi: {"user": {...}}</summary>
+public sealed class TodoistSyncResponse
+{
+    [JsonPropertyName("user")]
+    public TodoistUser? User { get; set; }
+}
